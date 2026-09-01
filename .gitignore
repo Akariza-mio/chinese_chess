@@ -1,0 +1,20 @@
+# Visual Studio local state and per-user settings
+.vs/
+*.vcxproj.user
+*.suo
+*.VC.db
+*.opendb
+
+# Build output and intermediate files
+/x64/
+/Debug/
+/Release/
+/chess/x64/
+*.obj
+*.pdb
+*.ilk
+*.idb
+*.tlog
+*.lastbuildstate
+*.recipe
+
