@@ -13,8 +13,8 @@ int main(){
 
     //如果没有主动退出的话
     while (!WindowShouldClose()) {
-        BeginDrawing();
-
+        beginDrawing();
+        
         ClearBackground(RAYWHITE);
         DrawFPS(10, 10);
         DrawRectangleLinesEx(
