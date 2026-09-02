@@ -151,7 +151,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="board_painter.h" />
+    <ClInclude Include="board_painter.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Target Name="CopyRaylibRuntime" AfterTargets="Build" Condition="'$(Platform)'=='x64'">
