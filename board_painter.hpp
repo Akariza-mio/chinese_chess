@@ -1,5 +1,6 @@
 #pragma once
 #include "raylib.h"
+#include "chess_board.hpp"
 
 constexpr int grid_wid = 80;
 constexpr int original_x = 80;
@@ -12,7 +13,7 @@ public:
 	~board_painter();
 	void draw_jin(int x,int y,int side) const;
 	void draw_board() const;
-
+	void draw_pieces(const chess_board& board) const;
 private:
 	Font chinese_font{};
 };

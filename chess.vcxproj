@@ -148,10 +148,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="board_painter.cpp" />
+    <ClCompile Include="chess_board.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="chess_board.hpp" />
     <ClInclude Include="board_painter.hpp" />
+    <ClInclude Include="chess_types.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Target Name="CopyRaylibRuntime" AfterTargets="Build" Condition="'$(Platform)'=='x64'">

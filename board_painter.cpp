@@ -128,3 +128,18 @@ void board_painter::draw_board() const{
     draw_jin(original_x + chess_width, original_y + 3 * grid_wid, 0);
     draw_jin(original_x + chess_width, original_y + 6 * grid_wid, 0);
 }
+void board_painter::draw_pieces(const chess_board& board) const {
+    for (int row = 0; row < 10; ++row) {
+        for (int col = 0; col < 9; ++col) {
+            pos now_pos{row,col};
+            const std::optional<piece>& cell = board.at(now_pos);
+            if (!cell.has_value()) {
+                continue;
+            }
+            int center_x = original_x + col * grid_wid;
+            int center_y = original_y + row * grid_wid;
+            Color c = (cell->get_side() == piece_side::Red) ? RED : BLACK;
+            DrawCircle(center_x, center_y, 34.0f, c);
+        }
+    }
+}

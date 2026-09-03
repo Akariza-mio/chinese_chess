@@ -21,9 +21,18 @@
     <ClCompile Include="board_painter.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="chess_board.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="board_painter.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="chess_types.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="chess_board.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
