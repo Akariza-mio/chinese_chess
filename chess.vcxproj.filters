@@ -35,5 +35,8 @@
     <ClInclude Include="chess_board.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="rule_engine.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

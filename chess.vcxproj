@@ -155,6 +155,7 @@
     <ClInclude Include="chess_board.hpp" />
     <ClInclude Include="board_painter.hpp" />
     <ClInclude Include="chess_types.hpp" />
+    <ClInclude Include="rule_engine.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Target Name="CopyRaylibRuntime" AfterTargets="Build" Condition="'$(Platform)'=='x64'">
