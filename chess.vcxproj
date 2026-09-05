@@ -150,6 +150,7 @@
     <ClCompile Include="board_painter.cpp" />
     <ClCompile Include="chess_board.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="rule_engine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="chess_board.hpp" />

@@ -2,9 +2,12 @@
 #include "raylib.h"
 #include "board_painter.hpp"
 #include "chess_board.hpp"
+#include "rule_engine.hpp"
+
 
 constexpr int window_width = 800;
 constexpr int window_height = 1000;
+
 int main(){
     chess_board board;
     InitWindow(window_width, window_height, "Chinese Chess");
