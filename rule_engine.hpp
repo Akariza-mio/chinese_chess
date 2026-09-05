@@ -9,5 +9,7 @@ private:
 	int pieces_cnt_between(const chess_board& board, const pos& from,const pos& to)const;
 	bool is_ju_move_ok(const chess_board& board, const a_move& m)const;
 	bool is_pao_move_ok(const chess_board& board, const a_move& m)const;
+	bool is_ma_move_ok(const chess_board& board, const a_move& m)const;
+	bool is_xiang_move_ok(const chess_board& board, const a_move& m)const;
 
 };

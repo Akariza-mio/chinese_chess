@@ -8,7 +8,21 @@
 constexpr int window_width = 800;
 constexpr int window_height = 1000;
 
+void test() {
+    chess_board board;
+    rule_engine rules;
+    board.clear();
+    board.at({ 0,2 }) = piece(piece_type::Xiang, piece_side::Black);
+    board.at({ 1,3 }) = piece(piece_type::Ma, piece_side::Black);
+    assert(
+        !rules.is_basic_move_valid(
+            board,
+            a_move{ {0, 2}, {2, 4} }
+        )
+    );
+}
 int main(){
+    test();
     chess_board board;
     InitWindow(window_width, window_height, "Chinese Chess");
     SetTargetFPS(60);

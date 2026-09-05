@@ -1,30 +1,38 @@
 #include "rule_engine.hpp"
 
 bool rule_engine::is_basic_move_valid(const chess_board& board, const a_move& m)const {
+	//终点和起点都需要在棋盘上
 	if (!board.is_inside(m.from) || !board.is_inside(m.to)) {
 		return false;
 	}
+	//终点和起点不能相同
 	if (m.from == m.to) {
 		return false;
 	}
+	//起点需要有棋子
 	const std::optional<piece>& from_cell = board.at(m.from);
 	if (!from_cell.has_value()) {
 		return false;
 	}
+	//终点不能是己方的棋子
 	const std::optional<piece>& to_cell = board.at(m.to);
 	if (to_cell.has_value() && to_cell->get_side() == from_cell->get_side()) {
 		return false;
 	}
+	//根据棋子类型判断走法
 	switch (from_cell->get_type()) {
 	case piece_type::Ju:
 		return is_ju_move_ok(board, m);
 	case piece_type::Pao:
 		return is_pao_move_ok(board, m);
+	case piece_type::Ma:
+		return is_ma_move_ok(board, m);
+	case piece_type::Xiang:
+		return is_xiang_move_ok(board, m);
 	default:
 		return false;
 	}
 }
-
 int rule_engine::pieces_cnt_between(const chess_board& board, const pos& from, const pos& to)const {
 	int res = -1;
 	if (from.row != to.row && from.col != to.col) {
@@ -85,4 +93,43 @@ bool rule_engine::is_pao_move_ok(const chess_board& board, const a_move& m)const
 		return true;
 	}
 	return false;
+}
+bool rule_engine::is_ma_move_ok(const chess_board& board, const a_move& m)const {
+	int row_dif = m.to.row - m.from.row;
+	int col_dif = m.to.col - m.from.col;
+	bool vertical = (std::abs(row_dif) == 2 && std::abs(col_dif) == 1);
+	bool horizontal = (std::abs(row_dif) == 1 && std::abs(col_dif) == 2);
+	if (!vertical && !horizontal) {
+		return false;
+	}
+	pos leg;
+	if (std::abs(row_dif) == 2) {
+		leg = { m.from.row + row_dif / 2,m.from.col };
+	}
+	else {
+		leg = { m.from.row ,m.from.col + col_dif / 2 };
+	}
+	if (board.at(leg).has_value()) {
+		return false;
+	}
+	return true;
+}
+bool rule_engine::is_xiang_move_ok(const chess_board& board, const a_move& m)const {
+	piece_side side = board.at(m.from)->get_side();
+	if (side == piece_side::Black && m.to.row > 4) {
+		return false;
+	}
+	if (side == piece_side::Red && m.to.row < 5) {
+		return false;
+	}
+	int row_dif = m.to.row - m.from.row;
+	int col_dif = m.to.col - m.from.col;
+	if (std::abs(row_dif) != 2 || std::abs(col_dif) != 2) {
+		return false;
+	}
+	pos leg{ m.from.row + row_dif / 2,m.from.col + col_dif / 2 };
+	if (board.at(leg).has_value()) {
+		return false;
+	}
+	return true;
 }
