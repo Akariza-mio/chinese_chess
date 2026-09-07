@@ -12,12 +12,12 @@ void test() {
     chess_board board;
     rule_engine rules;
     board.clear();
-    board.at({ 0,2 }) = piece(piece_type::Xiang, piece_side::Black);
-    board.at({ 1,3 }) = piece(piece_type::Ma, piece_side::Black);
+    board.at({ 3,4 }) = piece(piece_type::Bing, piece_side::Black);
+    board.at({ 4,4 }) = piece(piece_type::Bing, piece_side::Red);
     assert(
-        !rules.is_basic_move_valid(
+        rules.is_basic_move_valid(
             board,
-            a_move{ {0, 2}, {2, 4} }
+            a_move{ {3, 4}, {4, 4} }
         )
     );
 }

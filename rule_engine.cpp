@@ -29,6 +29,12 @@ bool rule_engine::is_basic_move_valid(const chess_board& board, const a_move& m)
 		return is_ma_move_ok(board, m);
 	case piece_type::Xiang:
 		return is_xiang_move_ok(board, m);
+	case piece_type::Shi:
+		return is_shi_move_ok(board, m);
+	case piece_type::General:
+		return is_general_move_ok(board, m);
+	case piece_type::Bing:
+		return is_bing_move_ok(board, m);
 	default:
 		return false;
 	}
@@ -130,6 +136,70 @@ bool rule_engine::is_xiang_move_ok(const chess_board& board, const a_move& m)con
 	pos leg{ m.from.row + row_dif / 2,m.from.col + col_dif / 2 };
 	if (board.at(leg).has_value()) {
 		return false;
+	}
+	return true;
+}
+bool rule_engine::is_shi_move_ok(const chess_board& board, const a_move& m)const {
+	if (m.to.col < 3 || m.to.col > 5) {
+		return false;
+	}
+	piece_side side = board.at(m.from)->get_side();
+	if (side == piece_side::Black && m.to.row > 2) {
+		return false;
+	}
+	if (side == piece_side::Red && m.to.row < 7) {
+		return false;
+	}
+	int row_dif = m.to.row - m.from.row;
+	int col_dif = m.to.col - m.from.col;
+	if (std::abs(row_dif) != 1 || std::abs(col_dif) != 1) {
+		return false;
+	}
+	return true;
+}
+bool rule_engine::is_general_move_ok(const chess_board& board, const a_move& m)const {
+	if (m.to.col < 3 || m.to.col > 5) {
+		return false;
+	}
+	piece_side side = board.at(m.from)->get_side();
+	if (side == piece_side::Black && m.to.row > 2) {
+		return false;
+	}
+	if (side == piece_side::Red && m.to.row < 7) {
+		return false;
+	}
+	int row_dif = m.to.row - m.from.row;
+	int col_dif = m.to.col - m.from.col;
+	if (std::abs(row_dif) > 1 || std::abs(col_dif) > 1) {
+		return false;
+	}
+	if (std::abs(row_dif) == 1 && std::abs(col_dif) == 1) {
+		return false;
+	}
+	return true;
+}
+bool rule_engine::is_bing_move_ok(const chess_board& board, const a_move& m)const {
+	int row_dif = m.to.row - m.from.row;
+	int col_dif = m.to.col - m.from.col;
+	if (std::abs(row_dif) + std::abs(col_dif) != 1) {
+		return false;
+	}
+	piece_side side = board.at(m.from)->get_side();
+	if (side == piece_side::Black) {
+		if (row_dif == -1) {
+			return false;
+		}
+		if (m.from.row < 5 && std::abs(col_dif) == 1) {
+			return false;
+		}
+	}
+	else {
+		if (row_dif == 1) {
+			return false;
+		}
+		if (m.from.row > 4 && std::abs(col_dif) == 1) {
+			return false;
+		}
 	}
 	return true;
 }

@@ -11,5 +11,7 @@ private:
 	bool is_pao_move_ok(const chess_board& board, const a_move& m)const;
 	bool is_ma_move_ok(const chess_board& board, const a_move& m)const;
 	bool is_xiang_move_ok(const chess_board& board, const a_move& m)const;
-
+    bool is_shi_move_ok(const chess_board& board, const a_move& m)const;
+	bool is_general_move_ok(const chess_board& board, const a_move& m)const;
+	bool is_bing_move_ok(const chess_board& board, const a_move& m)const;
 };
