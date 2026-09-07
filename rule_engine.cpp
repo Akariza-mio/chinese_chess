@@ -203,3 +203,53 @@ bool rule_engine::is_bing_move_ok(const chess_board& board, const a_move& m)cons
 	}
 	return true;
 }
+pos rule_engine::find_general(const chess_board& board, piece_side side)const {
+	for (int row = 0; row < 10; ++row) {
+		for (int col = 0; col < 9; ++col) {
+			pos now{ row,col };
+			const std::optional<piece>& cell = board.at(now);
+			if (cell.has_value()) {
+				if (cell->get_side() == side && cell->get_type() == piece_type::General) {
+					return now;
+				}
+			}
+		}
+	}
+	return { -1,-1 };
+}
+bool rule_engine::is_general_facing(const chess_board& board)const {
+	pos jiang = find_general(board, piece_side::Black);
+	pos shuai = find_general(board, piece_side::Red);
+	if (!board.is_inside(jiang) || !board.is_inside(shuai)) {
+		return false;
+	}
+	if (jiang.col != shuai.col) {
+		return false;
+	}
+	if (pieces_cnt_between(board, jiang, shuai) != 0) {
+		return false;
+	}
+	return true;
+}
+bool rule_engine::is_in_check(const chess_board& board, piece_side side)const {
+	pos general = find_general(board, side);
+	if (!board.is_inside(general)) {
+		return false;
+	}
+	if (is_general_facing(board)) {
+		return true;
+	}
+	for (int row = 0; row < 10; ++row) {
+		for (int col = 0; col < 9; ++col) {
+			pos attacker{ row,col };
+			if (!board.at(attacker).has_value()) {
+				continue;
+			}
+			a_move m{ attacker,general };
+			if (is_basic_move_valid(board, m)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
