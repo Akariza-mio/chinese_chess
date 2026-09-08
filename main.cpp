@@ -8,17 +8,50 @@
 constexpr int window_width = 800;
 constexpr int window_height = 1000;
 
-void test() {
+void test_pinned_piece() {
     chess_board board;
     rule_engine rules;
+
     board.clear();
-    board.at({ 0,4 }) = piece(piece_type::General, piece_side::Black);
-    board.at({ 9,5 }) = piece(piece_type::General, piece_side::Red);
-    board.at({ 1,2 }) = piece(piece_type::Ma, piece_side::Red);
-    assert(rules.is_in_check(board,piece_side::Black));
+
+    // 黑将
+    board.at({ 0, 4 }) = piece{
+        piece_type::General,
+        piece_side::Black
+    };
+
+    // 挡住红车的黑车
+    board.at({ 5, 4 }) = piece{
+        piece_type::Ju,
+        piece_side::Black
+    };
+
+    // 红车
+    board.at({ 9, 4 }) = piece{
+        piece_type::Ju,
+        piece_side::Red
+    };
+
+    // 红帅放在其他列，避免将帅照面
+    board.at({ 9, 3 }) = piece{
+        piece_type::General,
+        piece_side::Red
+    };
+
+    a_move expose_general{
+        {5, 4},
+        {6, 4}
+    };
+    // 但会暴露黑将，因此完整规则拒绝
+    assert(
+        rules.is_legal_move(
+            board,
+            expose_general
+        )
+    );
 }
 int main(){
-    test();
+    test_pinned_piece();
     chess_board board;
     InitWindow(window_width, window_height, "Chinese Chess");
     SetTargetFPS(60);

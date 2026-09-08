@@ -253,3 +253,14 @@ bool rule_engine::is_in_check(const chess_board& board, piece_side side)const {
 	}
 	return false;
 }
+bool rule_engine::is_legal_move(const chess_board& board, const a_move& m)const {
+	if (!is_basic_move_valid(board, m)) {
+		return false;
+	}
+	chess_board tp_board = board;
+	piece_side side = board.at(m.from)->get_side();
+	std::optional<piece> from_piece = board.at(m.from);
+	tp_board.at(m.to) = from_piece;
+	tp_board.at(m.from).reset();
+	return !is_in_check(tp_board, side);
+}
