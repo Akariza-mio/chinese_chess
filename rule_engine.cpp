@@ -287,3 +287,14 @@ std::vector<a_move> rule_engine::generate_legal_moves(const chess_board& board, 
 	}
 	return legal_moves;
 }
+game_status rule_engine::get_status(const chess_board& board, piece_side side)const {
+	std::vector<a_move> legal_moves = generate_legal_moves(board,side);
+	if (!legal_moves.empty()) {
+		return game_status::goingOn;
+	}
+	bool checking = is_in_check(board, side);
+	if (side == piece_side::Red) {
+		return checking ? game_status::BlackWin_checkmate : game_status::BlackWin_stalemate;
+	}
+	return checking ? game_status::RedWin_checkmate : game_status::RedWin_stalemate;
+}

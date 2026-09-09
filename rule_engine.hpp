@@ -8,6 +8,7 @@ public:
 	bool is_in_check(const chess_board& board, piece_side side)const;
 	bool is_legal_move(const chess_board& board, const a_move& m)const;
 	std::vector<a_move> generate_legal_moves(const chess_board& board, piece_side side)const;
+	game_status get_status(const chess_board& board,piece_side side)const;
 private:
 	int pieces_cnt_between(const chess_board& board, const pos& from,const pos& to)const;
 	bool is_ju_move_ok(const chess_board& board, const a_move& m)const;

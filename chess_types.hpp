@@ -12,6 +12,14 @@ enum class piece_type {
 	Pao,
 	Bing
 };
+enum class game_status {
+	goingOn,
+	RedWin_stalemate,
+	RedWin_checkmate,
+	BlackWin_stalemate,
+	BlackWin_checkmate,
+	Disconnected
+};
 //位置,row行，col列
 struct pos {
 	int row;
