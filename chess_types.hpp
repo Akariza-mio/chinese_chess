@@ -23,6 +23,7 @@ struct pos {
 struct a_move {
 	pos from;
 	pos to;
+	bool operator==(const a_move& m) const = default;
 };
 class piece {
 public:

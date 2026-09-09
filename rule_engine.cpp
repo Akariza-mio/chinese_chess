@@ -264,3 +264,26 @@ bool rule_engine::is_legal_move(const chess_board& board, const a_move& m)const 
 	tp_board.at(m.from).reset();
 	return !is_in_check(tp_board, side);
 }
+std::vector<a_move> rule_engine::generate_legal_moves(const chess_board& board, piece_side side)const {
+	std::vector<a_move> legal_moves;
+	legal_moves.reserve(200);
+	for (int from_row = 0; from_row < 10; ++from_row) {
+		for (int from_col = 0; from_col < 9; ++from_col) {
+			pos from{ from_row,from_col };
+			const std::optional<piece>& from_cell = board.at(from);
+			if (!from_cell.has_value() || from_cell->get_side() != side) {
+				continue;
+			}
+			for (int to_row = 0; to_row < 10; ++to_row) {
+				for (int to_col = 0; to_col < 9; ++to_col) {
+					pos to{ to_row,to_col };
+					a_move m{ from,to };
+					if (is_legal_move(board, m)) {
+						legal_moves.push_back(m);
+					}
+				}
+			}
+		}
+	}
+	return legal_moves;
+}
