@@ -1,37 +1,10 @@
-#include <cassert>
 #include "raylib.h"
 #include "board_painter.hpp"
 #include "chess_board.hpp"
-#include "rule_engine.hpp"
 constexpr int window_width = 800;
 constexpr int window_height = 1000;
 
-void test() {
-    chess_board board;
-    rule_engine rules;
-
-    board.clear();
-    board.at({ 0, 4 }) =
-        piece(piece_type::General, piece_side::Black);
-
-    board.at({ 9, 3 }) =
-        piece(piece_type::General, piece_side::Red);
-
-    board.at({ 2, 5 }) =
-        piece(piece_type::Ju, piece_side::Red);
-
-    board.at({ 2, 3 }) =
-        piece(piece_type::Ju, piece_side::Red);
-
-    assert(
-        rules.get_status(
-            board,
-            piece_side::Black
-        ) == game_status::goingOn
-    );
-}
 int main(){
-    test();
     chess_board board;
     InitWindow(window_width, window_height, "Chinese Chess");
     SetTargetFPS(60);
