@@ -139,7 +139,29 @@ void board_painter::draw_pieces(const chess_board& board) const {
             int center_x = original_x + col * grid_wid;
             int center_y = original_y + row * grid_wid;
             Color c = (cell->get_side() == piece_side::Red) ? RED : BLACK;
-            DrawCircle(center_x, center_y, 34.0f, c);
+            DrawCircle(center_x, center_y, 35.0f, c);
+        }
+    }
+}
+void board_painter::draw_selected_sign(const pos& p)const {
+    int center_x = p.col * grid_wid + original_x;
+    int center_y = p.row * grid_wid + original_y;
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            DrawLineEx(
+                Vector2{ (float)center_x - 35 + j * 60,(float)center_y - 35 + i * 70},
+                Vector2{ (float)center_x - 25 + j * 60,(float)center_y - 35 + i * 70},
+                2.0f, BLUE
+            );
+        }
+    }
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            DrawLineEx(
+                Vector2{ (float)center_x - 35 + j * 70,(float)center_y - 35 + i * 60 },
+                Vector2{ (float)center_x - 35 + j * 70,(float)center_y - 25 + i * 60 },
+                2.0f, BLUE
+            );
         }
     }
 }

@@ -9,6 +9,7 @@ public:
 	bool is_inside(const pos& p) const;
 	std::optional<piece>& at(const pos& p);
 	const std::optional<piece>& at(const pos& p) const;
+	void apply_move(const a_move& m);
 	void clear();
 	void reset();
 private:

@@ -52,3 +52,8 @@ void chess_board::reset() {
 		}
 	}
 }
+void chess_board::apply_move(const a_move& m) {
+	std::optional<piece> from_cell = at(m.from);
+	at(m.to) = from_cell;
+	at(m.from).reset();
+}
