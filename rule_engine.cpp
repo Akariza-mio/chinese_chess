@@ -1,4 +1,3 @@
-#include <cmath>
 #include "rule_engine.hpp"
 
 bool rule_engine::is_basic_move_valid(const chess_board& board, const a_move& m)const {
@@ -298,21 +297,4 @@ game_status rule_engine::get_status(const chess_board& board, piece_side side)co
 		return checking ? game_status::BlackWin_checkmate : game_status::BlackWin_stalemate;
 	}
 	return checking ? game_status::RedWin_checkmate : game_status::RedWin_stalemate;
-}
-std::optional<pos> rule_engine::get_pos_from_mouse(int mouse_x, int mouse_y)const {
-	float col_mouse = (mouse_x - original_x) / (float)grid_wid;
-	float row_mouse = (mouse_y - original_y) / (float)grid_wid;
-	int col = std::round(col_mouse);
-	int row = std::round(row_mouse);
-	if (row > 9 || row < 0 || col > 8 || col < 0) {
-		return std::nullopt;
-	}
-	int center_x = original_x + col * grid_wid;
-	int center_y = original_y + row * grid_wid;
-	int dx = mouse_x - center_x;
-	int dy = mouse_y - center_y;
-	if (dx * dx + dy * dy <= 35 * 35) {
-		return pos{ row,col };
-	}
-	return std::nullopt;
 }

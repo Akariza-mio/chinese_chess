@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-#include "board_painter.hpp"
 #include "chess_board.hpp"
 class rule_engine {
 public:
@@ -10,7 +9,6 @@ public:
 	bool is_legal_move(const chess_board& board, const a_move& m)const;
 	std::vector<a_move> generate_legal_moves(const chess_board& board, piece_side side)const;
 	game_status get_status(const chess_board& board,piece_side side)const;
-	std::optional<pos> get_pos_from_mouse(int mouse_x, int mouse_y)const;
 private:
 	int pieces_cnt_between(const chess_board& board, const pos& from,const pos& to)const;
 	bool is_ju_move_ok(const chess_board& board, const a_move& m)const;

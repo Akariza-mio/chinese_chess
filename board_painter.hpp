@@ -15,6 +15,7 @@ public:
 	void draw_board() const;
 	void draw_pieces(const chess_board& board) const;
 	void draw_selected_sign(const pos& p)const;
+	std::optional<pos> get_pos_from_mouse(int mouse_x, int mouse_y)const;
 private:
 	Font chinese_font{};
 };

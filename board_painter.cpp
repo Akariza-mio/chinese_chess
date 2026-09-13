@@ -1,3 +1,4 @@
+#include <cmath>
 #include "board_painter.hpp"
 #include "raylib.h"
 
@@ -164,4 +165,21 @@ void board_painter::draw_selected_sign(const pos& p)const {
             );
         }
     }
+}
+std::optional<pos> board_painter::get_pos_from_mouse(int mouse_x, int mouse_y)const {
+    float col_mouse = (mouse_x - original_x) / (float)grid_wid;
+    float row_mouse = (mouse_y - original_y) / (float)grid_wid;
+    int col = std::round(col_mouse);
+    int row = std::round(row_mouse);
+    if (row > 9 || row < 0 || col > 8 || col < 0) {
+        return std::nullopt;
+    }
+    int center_x = original_x + col * grid_wid;
+    int center_y = original_y + row * grid_wid;
+    int dx = mouse_x - center_x;
+    int dy = mouse_y - center_y;
+    if (dx * dx + dy * dy <= 35 * 35) {
+        return pos{ row,col };
+    }
+    return std::nullopt;
 }
