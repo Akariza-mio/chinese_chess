@@ -17,6 +17,8 @@ public:
 	void draw_selected_sign(const pos& p)const;
 	std::optional<pos> get_pos_from_mouse(int mouse_x, int mouse_y)const;
 	const char* get_piece_text(piece_type type, piece_side side)const;
+	void draw_status(piece_side now_turn, bool is_checking)const;
+	void draw_game_over_window(game_status status) const;
 private:
 	Font chinese_font{};
 };

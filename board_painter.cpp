@@ -3,24 +3,11 @@
 #include "raylib.h"
 
 board_painter::board_painter() {
-    constexpr int chinese_chars[] = {
-        0x695A, // 楚
-        0x6CB3, // 河
-        0x6C49, // 汉
-        0x754C, // 界
-        0x5C06, // 将
-        0x5E05, // 帅
-        0x58EB, // 士
-        0x4ED5, // 仕
-        0x8C61, // 象
-        0x76F8, // 相
-        0x9A6C, // 马
-        0x8F66, // 车
-        0x70AE, // 炮
-        0x5352, // 卒
-        0x5175  // 兵
-    };
-    chinese_font = LoadFontEx("assets/fonts/NotoSansCJKsc-Regular.otf", 48, chinese_chars, 15);
+    const char* all_chars = "楚河汉界将帅士仕相象马车炮兵卒红黑方胜当前行棋被军重开正在：！";
+    int cnt = 0;
+    int* codepoint = LoadCodepoints(all_chars, &cnt);
+    chinese_font = LoadFontEx("assets/fonts/NotoSansCJKsc-Regular.otf", 48, codepoint, cnt);
+    UnloadCodepoints(codepoint);
 }
 board_painter::~board_painter() {
     UnloadFont(chinese_font);
@@ -212,4 +199,44 @@ std::optional<pos> board_painter::get_pos_from_mouse(int mouse_x, int mouse_y)co
         return pos{ row,col };
     }
     return std::nullopt;
+}
+void board_painter::draw_status(piece_side now_turn, bool is_checking)const {
+    const char* turn_text = "";
+    Color c1;
+    if (now_turn == piece_side::Red) {
+        turn_text = "当前行棋：红方";
+        c1 = RED;
+    }
+    else {
+        turn_text = "当前行棋：黑方"; 
+        c1 = BLACK;
+    }
+    DrawTextEx(chinese_font, turn_text, Vector2{ 20.0f, 100.0f }, 40.0f, 0, c1);
+    if (is_checking) {
+        const char* check_text = "";
+        Color c2;
+        if (now_turn == piece_side::Red) {
+            check_text = "红方正在被将军！";
+            c2 = RED;
+        }
+        else {
+            check_text = "黑方正在被将军！";
+            c2 = BLACK;
+        }
+        DrawTextEx(chinese_font, check_text, Vector2{ 20.0f, 40.0f }, 48.0f, 0, c2);
+    }
+}
+void board_painter::draw_game_over_window(game_status status) const {
+    if (status == game_status::goingOn) return;
+    DrawRectangle(0, 0, 800, 1000, Color{ 0, 0, 0, 150 });
+    DrawRectangle(200, 350, 400, 300, RAYWHITE);
+    DrawRectangleLines(200, 350, 400, 300, DARKGRAY);
+    const char* win_text = (status == game_status::RedWin_checkmate || status == game_status::RedWin_stalemate) ? "红方胜" : "黑方胜";
+    Color c = (status == game_status::RedWin_checkmate || status == game_status::RedWin_stalemate) ? RED : BLACK;
+    DrawTextEx(chinese_font, win_text, Vector2{ 340.0f, 400.0f }, 60.0f, 0, c);
+    // 重开按钮
+    Rectangle restart_area = { 300, 520, 200, 80 };
+    DrawRectangleRec(restart_area, LIGHTGRAY);
+    DrawRectangleLinesEx(restart_area, 2.0f, DARKGRAY);
+    DrawTextEx(chinese_font, "重开", Vector2{ 370.0f, 535.0f }, 48.0f, 0, BLACK);
 }
