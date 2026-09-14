@@ -3,13 +3,24 @@
 #include "raylib.h"
 
 board_painter::board_painter() {
-    constexpr int chuhehanjie[] = {
+    constexpr int chinese_chars[] = {
         0x695A, // 楚
         0x6CB3, // 河
         0x6C49, // 汉
-        0x754C  // 界
+        0x754C, // 界
+        0x5C06, // 将
+        0x5E05, // 帅
+        0x58EB, // 士
+        0x4ED5, // 仕
+        0x8C61, // 象
+        0x76F8, // 相
+        0x9A6C, // 马
+        0x8F66, // 车
+        0x70AE, // 炮
+        0x5352, // 卒
+        0x5175  // 兵
     };
-    chinese_font = LoadFontEx("assets/fonts/NotoSansCJKsc-Regular.otf", 48, chuhehanjie, 4);
+    chinese_font = LoadFontEx("assets/fonts/NotoSansCJKsc-Regular.otf", 48, chinese_chars, 15);
 }
 board_painter::~board_painter() {
     UnloadFont(chinese_font);
@@ -129,6 +140,18 @@ void board_painter::draw_board() const{
     draw_jin(original_x + chess_width, original_y + 3 * grid_wid, 0);
     draw_jin(original_x + chess_width, original_y + 6 * grid_wid, 0);
 }
+const char* board_painter::get_piece_text(piece_type type, piece_side side)const {
+    switch (type) {
+    case piece_type::General: return (side == piece_side::Black) ? "将" : "帅";
+    case piece_type::Shi:     return (side == piece_side::Black) ? "士" : "仕";
+    case piece_type::Xiang:   return (side == piece_side::Black) ? "象" : "相";
+    case piece_type::Ma:      return "马";
+    case piece_type::Ju:      return "车";
+    case piece_type::Pao:     return "炮";
+    case piece_type::Bing:    return (side == piece_side::Black) ? "卒" : "兵";
+    }
+    return "";
+}
 void board_painter::draw_pieces(const chess_board& board) const {
     for (int row = 0; row < 10; ++row) {
         for (int col = 0; col < 9; ++col) {
@@ -141,6 +164,13 @@ void board_painter::draw_pieces(const chess_board& board) const {
             int center_y = original_y + row * grid_wid;
             Color c = (cell->get_side() == piece_side::Red) ? RED : BLACK;
             DrawCircle(center_x, center_y, 35.0f, c);
+            const char* text = get_piece_text(cell->get_type(), cell->get_side());
+            Vector2 text_pos = {
+                (float)center_x - 17.0f,
+                (float)center_y - 25.0f
+            };
+            DrawTextEx(chinese_font, text, text_pos, 50.0f, 0, WHITE);
+
         }
     }
 }
