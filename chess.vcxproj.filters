@@ -24,6 +24,18 @@
     <ClCompile Include="chess_board.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="game_state.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="network_protocol.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="network_game_session.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="network_transport.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="rule_engine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -39,6 +51,18 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="rule_engine.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="game_state.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="network_protocol.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="network_game_session.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="network_transport.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
