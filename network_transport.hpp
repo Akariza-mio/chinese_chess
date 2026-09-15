@@ -58,3 +58,6 @@ private:
     class implementation;
     std::unique_ptr<implementation> impl_;
 };
+
+// 返回适合展示给同一局域网玩家的本机 IPv4 地址，不包含 127.0.0.1。
+std::vector<std::string> get_local_ipv4_addresses();

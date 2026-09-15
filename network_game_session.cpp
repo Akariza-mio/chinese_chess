@@ -14,6 +14,7 @@ bool network_game_session::host(std::string& error, std::uint16_t port) {
     assigned_role_received_ = false;
     initial_state_received_ = false;
     move_pending_ = false;
+    restart_pending_ = false;
 
     if (!transport_.start_host(port, error)) {
         state_ = network_session_state::failed;
@@ -38,6 +39,7 @@ bool network_game_session::join(
     assigned_role_received_ = false;
     initial_state_received_ = false;
     move_pending_ = false;
+    restart_pending_ = false;
 
     if (!transport_.start_client(ipv4_address, port, error)) {
         state_ = network_session_state::failed;
@@ -88,6 +90,41 @@ bool network_game_session::submit_local_move(
     return true;
 }
 
+bool network_game_session::request_restart(std::string& error) {
+    error.clear();
+    if (state_ != network_session_state::playing ||
+        game_.status() == game_status::goingOn) {
+        error = "The game has not ended";
+        return false;
+    }
+    if (restart_pending_) {
+        error = "Restart request is already pending";
+        return false;
+    }
+
+    if (role_ == role::host_red) {
+        game_.reset();
+        if (!send_message(restart_message{})) {
+            error = status_text_;
+            return false;
+        }
+        if (!send_current_state()) {
+            error = status_text_;
+            return false;
+        }
+        status_text_ = "Connected - you are Red";
+        return true;
+    }
+
+    if (!send_message(restart_message{})) {
+        error = status_text_;
+        return false;
+    }
+    restart_pending_ = true;
+    status_text_ = "Waiting for host to restart";
+    return true;
+}
+
 void network_game_session::stop() {
     if (transport_.state() == network_connection_state::connected) {
         std::string ignored_error;
@@ -104,6 +141,7 @@ void network_game_session::stop() {
     assigned_role_received_ = false;
     initial_state_received_ = false;
     move_pending_ = false;
+    restart_pending_ = false;
 }
 
 const game_state& network_game_session::game() const {
@@ -133,6 +171,10 @@ bool network_game_session::move_pending() const {
     return move_pending_;
 }
 
+bool network_game_session::restart_pending() const {
+    return restart_pending_;
+}
+
 const std::string& network_game_session::status_text() const {
     return status_text_;
 }
@@ -157,12 +199,14 @@ void network_game_session::handle_transport_event(const network_event& event) {
                 : event.text;
         }
         move_pending_ = false;
+        restart_pending_ = false;
         break;
 
     case network_event_type::error:
         state_ = network_session_state::failed;
         status_text_ = event.text;
         move_pending_ = false;
+        restart_pending_ = false;
         break;
     }
 }
@@ -238,6 +282,19 @@ void network_game_session::handle_host_message(
         return;
     }
 
+    if (std::holds_alternative<restart_message>(message)) {
+        if (state_ != network_session_state::playing ||
+            game_.status() == game_status::goingOn) {
+            reject_client_move("Restart is only allowed after game over");
+            return;
+        }
+        game_.reset();
+        if (!send_message(restart_message{})) return;
+        if (!send_current_state()) return;
+        status_text_ = "Connected - you are Red";
+        return;
+    }
+
     if (const auto* error = std::get_if<error_message>(&message)) {
         status_text_ = "Peer error: " + error->reason;
         return;
@@ -286,10 +343,12 @@ void network_game_session::handle_client_message(
             state->board,
             state->current_turn,
             state->status,
-            state->sequence
+            state->sequence,
+            state->last_move
         );
         initial_state_received_ = true;
         move_pending_ = false;
+        restart_pending_ = false;
         state_ = network_session_state::playing;
         status_text_ = "Connected - you are Black";
         return;
@@ -306,6 +365,19 @@ void network_game_session::handle_client_message(
         state_ = network_session_state::disconnected;
         status_text_ = "The host ended the game";
         move_pending_ = false;
+        restart_pending_ = false;
+        return;
+    }
+
+    if (std::holds_alternative<restart_message>(message)) {
+        if (game_.status() == game_status::goingOn && !restart_pending_) {
+            fail_session("Unexpected RESTART message", true);
+            return;
+        }
+        game_.reset();
+        restart_pending_ = false;
+        move_pending_ = false;
+        status_text_ = "Connected - you are Black";
         return;
     }
 
@@ -320,6 +392,7 @@ bool network_game_session::send_message(const network_message& message) {
     state_ = network_session_state::failed;
     status_text_ = error;
     move_pending_ = false;
+    restart_pending_ = false;
     return false;
 }
 
@@ -328,6 +401,7 @@ bool network_game_session::send_current_state() {
         game_.sequence(),
         game_.current_turn(),
         game_.status(),
+        game_.last_move(),
         game_.board()
     });
 }
@@ -355,4 +429,5 @@ void network_game_session::fail_session(
     state_ = network_session_state::failed;
     status_text_ = std::move(reason);
     move_pending_ = false;
+    restart_pending_ = false;
 }

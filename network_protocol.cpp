@@ -131,6 +131,15 @@ bool parse_coordinate(std::string_view text, int maximum, int& value) {
         value >= 0 && value <= maximum;
 }
 
+bool parse_optional_coordinate(std::string_view text, int maximum, int& value) {
+    if (text.empty()) return false;
+    const char* begin = text.data();
+    const char* end = begin + text.size();
+    const auto result = std::from_chars(begin, end, value);
+    return result.ec == std::errc{} && result.ptr == end &&
+        value >= -1 && value <= maximum;
+}
+
 bool has_extra_token(std::istringstream& stream) {
     std::string extra;
     return static_cast<bool>(stream >> extra);
@@ -156,13 +165,23 @@ std::string serialize_message(const network_message& message) {
                 std::to_string(value.move.to.col) + "\n";
         }
         else if constexpr (std::is_same_v<message_type, state_message>) {
+            const a_move last_move = value.last_move.value_or(
+                a_move{ pos{ -1, -1 }, pos{ -1, -1 } }
+            );
             return "STATE " + std::to_string(value.sequence) + " " +
                 side_to_text(value.current_turn) + " " +
                 status_to_text(value.status) + " " +
+                std::to_string(last_move.from.row) + " " +
+                std::to_string(last_move.from.col) + " " +
+                std::to_string(last_move.to.row) + " " +
+                std::to_string(last_move.to.col) + " " +
                 encode_board(value.board) + "\n";
         }
         else if constexpr (std::is_same_v<message_type, error_message>) {
             return "ERROR " + value.reason + "\n";
+        }
+        else if constexpr (std::is_same_v<message_type, restart_message>) {
+            return "RESTART\n";
         }
         else {
             return "QUIT\n";
@@ -242,8 +261,14 @@ std::optional<network_message> parse_message(
         std::string sequence_text;
         std::string side_text;
         std::string status_text;
+        std::string from_row_text;
+        std::string from_col_text;
+        std::string to_row_text;
+        std::string to_col_text;
         std::string board_text;
-        if (!(stream >> sequence_text >> side_text >> status_text >> board_text) ||
+        if (!(stream >> sequence_text >> side_text >> status_text >>
+            from_row_text >> from_col_text >> to_row_text >> to_col_text >>
+            board_text) ||
             has_extra_token(stream)) {
             error = "invalid STATE message";
             return std::nullopt;
@@ -253,12 +278,33 @@ std::optional<network_message> parse_message(
         const std::optional<piece_side> side = text_to_side(side_text);
         const std::optional<game_status> status = text_to_status(status_text);
         const std::optional<chess_board> board = decode_board(board_text, error);
+        a_move last_move{};
         if (!parse_uint32(sequence_text, sequence) ||
+            !parse_optional_coordinate(from_row_text, 9, last_move.from.row) ||
+            !parse_optional_coordinate(from_col_text, 8, last_move.from.col) ||
+            !parse_optional_coordinate(to_row_text, 9, last_move.to.row) ||
+            !parse_optional_coordinate(to_col_text, 8, last_move.to.col) ||
             !side.has_value() || !status.has_value() || !board.has_value()) {
             if (error.empty()) error = "STATE contains an invalid field";
             return std::nullopt;
         }
-        return state_message{ sequence, *side, *status, *board };
+        const bool no_last_move = last_move.from.row == -1 &&
+            last_move.from.col == -1 && last_move.to.row == -1 &&
+            last_move.to.col == -1;
+        const bool complete_last_move = last_move.from.row >= 0 &&
+            last_move.from.col >= 0 && last_move.to.row >= 0 &&
+            last_move.to.col >= 0;
+        if (!no_last_move && !complete_last_move) {
+            error = "STATE contains an incomplete last move";
+            return std::nullopt;
+        }
+        return state_message{
+            sequence,
+            *side,
+            *status,
+            complete_last_move ? std::optional<a_move>{ last_move } : std::nullopt,
+            *board
+        };
     }
 
     if (command == "ERROR") {
@@ -269,6 +315,14 @@ std::optional<network_message> parse_message(
             return std::nullopt;
         }
         return error_message{ std::move(reason) };
+    }
+
+    if (command == "RESTART") {
+        if (has_extra_token(stream)) {
+            error = "invalid RESTART message";
+            return std::nullopt;
+        }
+        return restart_message{};
     }
 
     if (command == "QUIT") {

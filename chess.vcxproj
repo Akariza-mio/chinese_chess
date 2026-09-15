@@ -133,11 +133,13 @@
       <PreprocessorDefinitions>USE_LIBTYPE_SHARED;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir)third_party\raylib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)third_party\raylib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>raylibdll.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -151,6 +153,7 @@
     <ClCompile Include="chess_board.cpp" />
     <ClCompile Include="game_state.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="move_animation.cpp" />
     <ClCompile Include="network_game_session.cpp" />
     <ClCompile Include="network_protocol.cpp" />
     <ClCompile Include="network_transport.cpp" />
@@ -161,6 +164,7 @@
     <ClInclude Include="board_painter.hpp" />
     <ClInclude Include="chess_types.hpp" />
     <ClInclude Include="game_state.hpp" />
+    <ClInclude Include="move_animation.hpp" />
     <ClInclude Include="network_game_session.hpp" />
     <ClInclude Include="network_protocol.hpp" />
     <ClInclude Include="network_transport.hpp" />

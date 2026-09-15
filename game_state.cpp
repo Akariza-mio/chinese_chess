@@ -1,5 +1,7 @@
 #include "game_state.hpp"
 
+#include <utility>
+
 const chess_board& game_state::board() const {
     return board_;
 }
@@ -14,6 +16,10 @@ game_status game_state::status() const {
 
 std::uint32_t game_state::sequence() const {
     return sequence_;
+}
+
+const std::optional<a_move>& game_state::last_move() const {
+    return last_move_;
 }
 
 bool game_state::try_move(const a_move& move, const rule_engine& rules) {
@@ -33,6 +39,7 @@ bool game_state::try_move(const a_move& move, const rule_engine& rules) {
     }
 
     board_.apply_move(move);
+    last_move_ = move;
     current_turn_ = (current_turn_ == piece_side::Red)
         ? piece_side::Black
         : piece_side::Red;
@@ -46,16 +53,19 @@ void game_state::reset() {
     current_turn_ = piece_side::Red;
     status_ = game_status::goingOn;
     sequence_ = 0;
+    last_move_.reset();
 }
 
 void game_state::apply_snapshot(
     const chess_board& board,
     piece_side current_turn,
     game_status status,
-    std::uint32_t sequence
+    std::uint32_t sequence,
+    std::optional<a_move> last_move
 ) {
     board_ = board;
     current_turn_ = current_turn;
     status_ = status;
     sequence_ = sequence;
+    last_move_ = std::move(last_move);
 }

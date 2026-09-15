@@ -9,6 +9,7 @@
 /x64/
 /Debug/
 /Release/
+/dist/
 /chess/x64/
 *.obj
 *.pdb
@@ -17,4 +18,3 @@
 *.tlog
 *.lastbuildstate
 *.recipe
-history.md

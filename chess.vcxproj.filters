@@ -27,6 +27,9 @@
     <ClCompile Include="game_state.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="move_animation.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="network_protocol.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -54,6 +57,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="game_state.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="move_animation.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="network_protocol.hpp">

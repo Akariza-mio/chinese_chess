@@ -11,6 +11,7 @@
 #include <deque>
 #include <mutex>
 #include <thread>
+#include <unordered_set>
 #include <utility>
 
 namespace {
@@ -370,4 +371,41 @@ bool network_transport::winsock_ready() const {
 
 void network_transport::stop() {
     impl_->stop();
+}
+
+std::vector<std::string> get_local_ipv4_addresses() {
+    WSADATA data{};
+    if (WSAStartup(MAKEWORD(2, 2), &data) != 0) return {};
+
+    std::vector<std::string> result;
+    std::unordered_set<std::string> seen;
+    std::array<char, 256> hostname{};
+    if (gethostname(hostname.data(), static_cast<int>(hostname.size())) == 0) {
+        addrinfo hints{};
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
+        addrinfo* addresses = nullptr;
+        if (getaddrinfo(hostname.data(), nullptr, &hints, &addresses) == 0) {
+            for (addrinfo* current = addresses;
+                current != nullptr;
+                current = current->ai_next) {
+                const auto* ipv4 = reinterpret_cast<const sockaddr_in*>(
+                    current->ai_addr
+                );
+                std::array<char, INET_ADDRSTRLEN> text{};
+                if (inet_ntop(AF_INET, &ipv4->sin_addr,
+                    text.data(), static_cast<DWORD>(text.size())) == nullptr) {
+                    continue;
+                }
+                const std::string address(text.data());
+                if (address != "127.0.0.1" && seen.insert(address).second) {
+                    result.push_back(address);
+                }
+            }
+            freeaddrinfo(addresses);
+        }
+    }
+
+    WSACleanup();
+    return result;
 }

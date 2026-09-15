@@ -42,6 +42,7 @@ public:
 
     // 主机在本地验证红方着法；客户端只提交黑方请求，等待主机 STATE。
     bool submit_local_move(const a_move& move, std::string& error);
+    bool request_restart(std::string& error);
 
     void stop();
 
@@ -50,6 +51,7 @@ public:
     std::optional<piece_side> local_side() const;
     bool can_local_move() const;
     bool move_pending() const;
+    bool restart_pending() const;
     const std::string& status_text() const;
 
 private:
@@ -79,4 +81,5 @@ private:
     bool assigned_role_received_ = false;
     bool initial_state_received_ = false;
     bool move_pending_ = false;
+    bool restart_pending_ = false;
 };

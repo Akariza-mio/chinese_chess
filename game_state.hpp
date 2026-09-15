@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 
 #include "chess_board.hpp"
 #include "rule_engine.hpp"
@@ -13,6 +14,7 @@ public:
     piece_side current_turn() const;
     game_status status() const;
     std::uint32_t sequence() const;
+    const std::optional<a_move>& last_move() const;
 
     bool try_move(const a_move& move, const rule_engine& rules);
     void reset();
@@ -22,7 +24,8 @@ public:
         const chess_board& board,
         piece_side current_turn,
         game_status status,
-        std::uint32_t sequence
+        std::uint32_t sequence,
+        std::optional<a_move> last_move
     );
 
 private:
@@ -30,4 +33,5 @@ private:
     piece_side current_turn_ = piece_side::Red;
     game_status status_ = game_status::goingOn;
     std::uint32_t sequence_ = 0;
+    std::optional<a_move> last_move_;
 };
