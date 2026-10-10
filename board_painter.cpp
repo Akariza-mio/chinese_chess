@@ -33,7 +33,8 @@ board_painter::board_painter() {
     const char* all_chars =
         "楚河汉界将帅士仕相象马车炮兵卒红黑方胜当前行棋被军重开正在：！"
         "中国棋本地对局创建联机加入输入主机地址按回车连接等待玩家你的"
-        "局域网端口返回菜单请求已发送确认失败断开握手取消执，再错误";
+        "局域网端口返回菜单请求已发送确认失败断开握手取消执，再错误"
+        "悔同意拒绝回应对方";
     int cnt = 0;
     int* codepoint = LoadCodepoints(all_chars, &cnt);
     chinese_font = LoadFontEx("assets/fonts/NotoSansCJKsc-Regular.otf", 48, codepoint, cnt);
@@ -436,5 +437,47 @@ void board_painter::draw_back_button() const {
         chinese_font,
         Rectangle{ 600.0f, 70.0f, 180.0f, 55.0f },
         "返回菜单"
+    );
+}
+
+void board_painter::draw_undo_button(const char* text, bool enabled) const {
+    const Rectangle area{ 600.0f, 10.0f, 180.0f, 50.0f };
+    const bool hovered = enabled &&
+        CheckCollisionPointRec(GetMousePosition(), area);
+    DrawRectangleRec(
+        area,
+        enabled ? (hovered ? LIGHTGRAY : RAYWHITE) : GRAY
+    );
+    DrawRectangleLinesEx(area, 3.0f, DARKGRAY);
+    draw_centered_text(
+        chinese_font,
+        text,
+        area,
+        32.0f,
+        enabled ? DARKGRAY : Color{ 90, 90, 90, 255 }
+    );
+}
+
+void board_painter::draw_undo_request_window() const {
+    DrawRectangle(0, 0, 800, 1000, Color{ 0, 0, 0, 150 });
+    const Rectangle panel{ 150.0f, 350.0f, 500.0f, 280.0f };
+    DrawRectangleRec(panel, RAYWHITE);
+    DrawRectangleLinesEx(panel, 3.0f, DARKGRAY);
+    draw_centered_text(
+        chinese_font,
+        "对方请求悔棋",
+        Rectangle{ 150.0f, 385.0f, 500.0f, 80.0f },
+        48.0f,
+        DARKGRAY
+    );
+    draw_menu_button(
+        chinese_font,
+        Rectangle{ 210.0f, 520.0f, 160.0f, 70.0f },
+        "同意"
+    );
+    draw_menu_button(
+        chinese_font,
+        Rectangle{ 430.0f, 520.0f, 160.0f, 70.0f },
+        "拒绝"
     );
 }

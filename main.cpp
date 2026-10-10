@@ -16,7 +16,10 @@ constexpr Rectangle local_button{ 250.0f, 350.0f, 300.0f, 70.0f };
 constexpr Rectangle host_button{ 250.0f, 450.0f, 300.0f, 70.0f };
 constexpr Rectangle join_button{ 250.0f, 550.0f, 300.0f, 70.0f };
 constexpr Rectangle back_button{ 600.0f, 70.0f, 180.0f, 55.0f };
+constexpr Rectangle undo_button{ 600.0f, 10.0f, 180.0f, 50.0f };
 constexpr Rectangle game_over_button{ 300.0f, 520.0f, 200.0f, 80.0f };
+constexpr Rectangle accept_undo_button{ 210.0f, 520.0f, 160.0f, 70.0f };
+constexpr Rectangle reject_undo_button{ 430.0f, 520.0f, 160.0f, 70.0f };
 
 enum class app_page {
     main_menu,
@@ -248,21 +251,45 @@ int main() {
             const bool is_client = page == app_page::network_client;
             const bool game_was_over_before_click =
                 network_session.game().status() != game_status::goingOn;
-            if (network_session.state() == network_session_state::playing &&
+            const bool undo_request_incoming =
+                network_session.undo_request_incoming();
+
+            if (undo_request_incoming) {
+                selected_pos.reset();
+                if (!animation.active() &&
+                    (left_clicked(accept_undo_button) ||
+                     left_clicked(reject_undo_button))) {
+                    const bool accepted = CheckCollisionPointRec(
+                        GetMousePosition(), accept_undo_button
+                    );
+                    std::string error;
+                    network_session.respond_to_undo(accepted, error);
+                    animation.reset();
+                }
+            }
+            else if (network_session.state() == network_session_state::playing &&
                 !animation.active()) {
-                handle_network_click(
-                    network_session,
-                    selected_pos,
-                    *painter,
-                    is_client,
-                    animation
-                );
+                if (!network_session.undo_request_pending() &&
+                    left_clicked(undo_button)) {
+                    std::string error;
+                    network_session.request_undo(error);
+                    selected_pos.reset();
+                }
+                else {
+                    handle_network_click(
+                        network_session,
+                        selected_pos,
+                        *painter,
+                        is_client,
+                        animation
+                    );
+                }
             }
             else {
                 selected_pos.reset();
             }
 
-            if (left_clicked(back_button)) {
+            if (!undo_request_incoming && left_clicked(back_button)) {
                 network_session.stop();
                 selected_pos.reset();
                 animation.reset();
@@ -352,6 +379,18 @@ int main() {
             }
             if (is_network) {
                 painter->draw_back_button();
+                if (shown_game.status() == game_status::goingOn) {
+                    painter->draw_undo_button(
+                        network_session.undo_request_pending()
+                            ? "等待回应"
+                            : "悔棋",
+                        network_session.can_request_undo() &&
+                            !animation.active()
+                    );
+                }
+                if (network_session.undo_request_incoming()) {
+                    painter->draw_undo_request_window();
+                }
             }
         }
 

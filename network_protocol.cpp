@@ -140,6 +140,12 @@ bool parse_optional_coordinate(std::string_view text, int maximum, int& value) {
         value >= -1 && value <= maximum;
 }
 
+std::optional<bool> parse_bool(std::string_view text) {
+    if (text == "1") return true;
+    if (text == "0") return false;
+    return std::nullopt;
+}
+
 bool has_extra_token(std::istringstream& stream) {
     std::string extra;
     return static_cast<bool>(stream >> extra);
@@ -175,6 +181,8 @@ std::string serialize_message(const network_message& message) {
                 std::to_string(last_move.from.col) + " " +
                 std::to_string(last_move.to.row) + " " +
                 std::to_string(last_move.to.col) + " " +
+                (value.red_can_undo ? "1 " : "0 ") +
+                (value.black_can_undo ? "1 " : "0 ") +
                 encode_board(value.board) + "\n";
         }
         else if constexpr (std::is_same_v<message_type, error_message>) {
@@ -182,6 +190,14 @@ std::string serialize_message(const network_message& message) {
         }
         else if constexpr (std::is_same_v<message_type, restart_message>) {
             return "RESTART\n";
+        }
+        else if constexpr (std::is_same_v<message_type, undo_request_message>) {
+            return "UNDO_REQUEST\n";
+        }
+        else if constexpr (std::is_same_v<message_type, undo_response_message>) {
+            return value.accepted
+                ? "UNDO_RESPONSE ACCEPT\n"
+                : "UNDO_RESPONSE REJECT\n";
         }
         else {
             return "QUIT\n";
@@ -265,10 +281,12 @@ std::optional<network_message> parse_message(
         std::string from_col_text;
         std::string to_row_text;
         std::string to_col_text;
+        std::string red_can_undo_text;
+        std::string black_can_undo_text;
         std::string board_text;
         if (!(stream >> sequence_text >> side_text >> status_text >>
             from_row_text >> from_col_text >> to_row_text >> to_col_text >>
-            board_text) ||
+            red_can_undo_text >> black_can_undo_text >> board_text) ||
             has_extra_token(stream)) {
             error = "invalid STATE message";
             return std::nullopt;
@@ -277,6 +295,8 @@ std::optional<network_message> parse_message(
         std::uint32_t sequence = 0;
         const std::optional<piece_side> side = text_to_side(side_text);
         const std::optional<game_status> status = text_to_status(status_text);
+        const std::optional<bool> red_can_undo = parse_bool(red_can_undo_text);
+        const std::optional<bool> black_can_undo = parse_bool(black_can_undo_text);
         const std::optional<chess_board> board = decode_board(board_text, error);
         a_move last_move{};
         if (!parse_uint32(sequence_text, sequence) ||
@@ -284,7 +304,9 @@ std::optional<network_message> parse_message(
             !parse_optional_coordinate(from_col_text, 8, last_move.from.col) ||
             !parse_optional_coordinate(to_row_text, 9, last_move.to.row) ||
             !parse_optional_coordinate(to_col_text, 8, last_move.to.col) ||
-            !side.has_value() || !status.has_value() || !board.has_value()) {
+            !side.has_value() || !status.has_value() ||
+            !red_can_undo.has_value() || !black_can_undo.has_value() ||
+            !board.has_value()) {
             if (error.empty()) error = "STATE contains an invalid field";
             return std::nullopt;
         }
@@ -303,6 +325,8 @@ std::optional<network_message> parse_message(
             *side,
             *status,
             complete_last_move ? std::optional<a_move>{ last_move } : std::nullopt,
+            *red_can_undo,
+            *black_can_undo,
             *board
         };
     }
@@ -323,6 +347,26 @@ std::optional<network_message> parse_message(
             return std::nullopt;
         }
         return restart_message{};
+    }
+
+    if (command == "UNDO_REQUEST") {
+        if (has_extra_token(stream)) {
+            error = "invalid UNDO_REQUEST message";
+            return std::nullopt;
+        }
+        return undo_request_message{};
+    }
+
+    if (command == "UNDO_RESPONSE") {
+        std::string response;
+        if (!(stream >> response) || has_extra_token(stream)) {
+            error = "invalid UNDO_RESPONSE message";
+            return std::nullopt;
+        }
+        if (response == "ACCEPT") return undo_response_message{ true };
+        if (response == "REJECT") return undo_response_message{ false };
+        error = "UNDO_RESPONSE contains an unknown response";
+        return std::nullopt;
     }
 
     if (command == "QUIT") {

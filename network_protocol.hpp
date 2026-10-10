@@ -8,7 +8,7 @@
 
 #include "chess_board.hpp"
 
-constexpr std::uint32_t network_protocol_version = 2;
+constexpr std::uint32_t network_protocol_version = 3;
 
 struct hello_message {
     std::uint32_t version;
@@ -28,6 +28,8 @@ struct state_message {
     piece_side current_turn;
     game_status status;
     std::optional<a_move> last_move;
+    bool red_can_undo;
+    bool black_can_undo;
     chess_board board;
 };
 
@@ -36,6 +38,12 @@ struct error_message {
 };
 
 struct restart_message {};
+struct undo_request_message {};
+
+struct undo_response_message {
+    bool accepted;
+};
+
 struct quit_message {};
 
 using network_message = std::variant<
@@ -45,6 +53,8 @@ using network_message = std::variant<
     state_message,
     error_message,
     restart_message,
+    undo_request_message,
+    undo_response_message,
     quit_message
 >;
 

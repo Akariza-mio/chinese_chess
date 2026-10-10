@@ -1,5 +1,7 @@
 #include "network_game_session.hpp"
 
+#include <algorithm>
+#include <iterator>
 #include <utility>
 
 #include "network_protocol.hpp"
@@ -15,6 +17,8 @@ bool network_game_session::host(std::string& error, std::uint16_t port) {
     initial_state_received_ = false;
     move_pending_ = false;
     restart_pending_ = false;
+    clear_undo_requests();
+    clear_history();
 
     if (!transport_.start_host(port, error)) {
         state_ = network_session_state::failed;
@@ -40,6 +44,8 @@ bool network_game_session::join(
     initial_state_received_ = false;
     move_pending_ = false;
     restart_pending_ = false;
+    clear_undo_requests();
+    clear_history();
 
     if (!transport_.start_client(ipv4_address, port, error)) {
         state_ = network_session_state::failed;
@@ -67,10 +73,12 @@ bool network_game_session::submit_local_move(
     }
 
     if (role_ == role::host_red) {
+        const game_state before_move = game_;
         if (!game_.try_move(move, rules_)) {
             error = "Illegal move";
             return false;
         }
+        move_history_.push_back({ piece_side::Red, before_move });
         if (!send_current_state()) {
             error = status_text_;
             return false;
@@ -104,6 +112,8 @@ bool network_game_session::request_restart(std::string& error) {
 
     if (role_ == role::host_red) {
         game_.reset();
+        clear_history();
+        clear_undo_requests();
         if (!send_message(restart_message{})) {
             error = status_text_;
             return false;
@@ -125,6 +135,55 @@ bool network_game_session::request_restart(std::string& error) {
     return true;
 }
 
+bool network_game_session::request_undo(std::string& error) {
+    error.clear();
+    if (!can_request_undo()) {
+        error = "There is no local move available to undo";
+        return false;
+    }
+    if (!send_message(undo_request_message{})) {
+        error = status_text_;
+        return false;
+    }
+
+    undo_request_pending_ = true;
+    status_text_ = "Waiting for the other player to answer undo request";
+    return true;
+}
+
+bool network_game_session::respond_to_undo(
+    bool accepted,
+    std::string& error
+) {
+    error.clear();
+    if (state_ != network_session_state::playing ||
+        !undo_request_incoming_) {
+        error = "There is no undo request to answer";
+        return false;
+    }
+
+    undo_request_incoming_ = false;
+    if (role_ == role::host_red && accepted &&
+        !apply_undo(piece_side::Black)) {
+        error = "The requested undo point no longer exists";
+        return false;
+    }
+
+    if (!send_message(undo_response_message{ accepted })) {
+        error = status_text_;
+        return false;
+    }
+    if (role_ == role::host_red && accepted && !send_current_state()) {
+        error = status_text_;
+        return false;
+    }
+
+    status_text_ = accepted
+        ? "Undo request accepted"
+        : "Undo request rejected";
+    return true;
+}
+
 void network_game_session::stop() {
     if (transport_.state() == network_connection_state::connected) {
         std::string ignored_error;
@@ -142,6 +201,8 @@ void network_game_session::stop() {
     initial_state_received_ = false;
     move_pending_ = false;
     restart_pending_ = false;
+    clear_undo_requests();
+    clear_history();
 }
 
 const game_state& network_game_session::game() const {
@@ -164,7 +225,9 @@ bool network_game_session::can_local_move() const {
         side.has_value() &&
         game_.status() == game_status::goingOn &&
         game_.current_turn() == *side &&
-        !move_pending_;
+        !move_pending_ &&
+        !undo_request_pending_ &&
+        !undo_request_incoming_;
 }
 
 bool network_game_session::move_pending() const {
@@ -173,6 +236,28 @@ bool network_game_session::move_pending() const {
 
 bool network_game_session::restart_pending() const {
     return restart_pending_;
+}
+
+bool network_game_session::can_request_undo() const {
+    const std::optional<piece_side> side = local_side();
+    if (state_ != network_session_state::playing ||
+        !side.has_value() ||
+        game_.status() != game_status::goingOn ||
+        move_pending_ || restart_pending_ ||
+        undo_request_pending_ || undo_request_incoming_) {
+        return false;
+    }
+
+    if (role_ == role::host_red) return has_undo_point(*side);
+    return *side == piece_side::Red ? red_can_undo_ : black_can_undo_;
+}
+
+bool network_game_session::undo_request_pending() const {
+    return undo_request_pending_;
+}
+
+bool network_game_session::undo_request_incoming() const {
+    return undo_request_incoming_;
 }
 
 const std::string& network_game_session::status_text() const {
@@ -200,6 +285,7 @@ void network_game_session::handle_transport_event(const network_event& event) {
         }
         move_pending_ = false;
         restart_pending_ = false;
+        clear_undo_requests();
         break;
 
     case network_event_type::error:
@@ -207,6 +293,7 @@ void network_game_session::handle_transport_event(const network_event& event) {
         status_text_ = event.text;
         move_pending_ = false;
         restart_pending_ = false;
+        clear_undo_requests();
         break;
     }
 }
@@ -257,6 +344,10 @@ void network_game_session::handle_host_message(
             fail_session("MOVE received before handshake completed", true);
             return;
         }
+        if (undo_request_pending_ || undo_request_incoming_) {
+            reject_client_move("A move is not allowed during an undo request");
+            return;
+        }
         if (game_.current_turn() != piece_side::Black) {
             reject_client_move("Client attempted to move out of turn");
             return;
@@ -265,10 +356,13 @@ void network_game_session::handle_host_message(
             reject_client_move("Client used an outdated state sequence");
             return;
         }
+        const game_state before_move = game_;
         if (!game_.try_move(move->move, rules_)) {
             reject_client_move("Client submitted an illegal move");
             return;
         }
+
+        move_history_.push_back({ piece_side::Black, before_move });
 
         status_text_ = "Connected - you are Red";
         send_current_state();
@@ -289,9 +383,44 @@ void network_game_session::handle_host_message(
             return;
         }
         game_.reset();
+        clear_history();
+        clear_undo_requests();
         if (!send_message(restart_message{})) return;
         if (!send_current_state()) return;
         status_text_ = "Connected - you are Red";
+        return;
+    }
+
+    if (std::holds_alternative<undo_request_message>(message)) {
+        if (state_ != network_session_state::playing ||
+            game_.status() != game_status::goingOn ||
+            undo_request_pending_ || undo_request_incoming_ ||
+            !has_undo_point(piece_side::Black)) {
+            send_message(error_message{ "Undo request is not available" });
+            return;
+        }
+        undo_request_incoming_ = true;
+        status_text_ = "The other player requested an undo";
+        return;
+    }
+
+    if (const auto* response = std::get_if<undo_response_message>(&message)) {
+        if (!undo_request_pending_) {
+            fail_session("Unexpected UNDO_RESPONSE message", true);
+            return;
+        }
+        undo_request_pending_ = false;
+        if (response->accepted) {
+            if (!apply_undo(piece_side::Red)) {
+                fail_session("The accepted undo point no longer exists", true);
+                return;
+            }
+            if (!send_current_state()) return;
+            status_text_ = "Undo request accepted";
+        }
+        else {
+            status_text_ = "Undo request rejected";
+        }
         return;
     }
 
@@ -346,6 +475,8 @@ void network_game_session::handle_client_message(
             state->sequence,
             state->last_move
         );
+        red_can_undo_ = state->red_can_undo;
+        black_can_undo_ = state->black_can_undo;
         initial_state_received_ = true;
         move_pending_ = false;
         restart_pending_ = false;
@@ -356,6 +487,7 @@ void network_game_session::handle_client_message(
 
     if (const auto* error = std::get_if<error_message>(&message)) {
         move_pending_ = false;
+        undo_request_pending_ = false;
         status_text_ = "Host rejected request: " + error->reason;
         return;
     }
@@ -366,6 +498,7 @@ void network_game_session::handle_client_message(
         status_text_ = "The host ended the game";
         move_pending_ = false;
         restart_pending_ = false;
+        clear_undo_requests();
         return;
     }
 
@@ -375,9 +508,38 @@ void network_game_session::handle_client_message(
             return;
         }
         game_.reset();
+        clear_history();
+        clear_undo_requests();
         restart_pending_ = false;
         move_pending_ = false;
         status_text_ = "Connected - you are Black";
+        return;
+    }
+
+    if (std::holds_alternative<undo_request_message>(message)) {
+        if (state_ != network_session_state::playing ||
+            game_.status() != game_status::goingOn ||
+            undo_request_incoming_ ||
+            !red_can_undo_) {
+            fail_session("Unexpected UNDO_REQUEST message", true);
+            return;
+        }
+        // 双方同时申请时由主机（红方）的申请优先。
+        undo_request_pending_ = false;
+        undo_request_incoming_ = true;
+        status_text_ = "The other player requested an undo";
+        return;
+    }
+
+    if (const auto* response = std::get_if<undo_response_message>(&message)) {
+        if (!undo_request_pending_) {
+            fail_session("Unexpected UNDO_RESPONSE message", true);
+            return;
+        }
+        undo_request_pending_ = false;
+        status_text_ = response->accepted
+            ? "Undo request accepted"
+            : "Undo request rejected";
         return;
     }
 
@@ -402,8 +564,55 @@ bool network_game_session::send_current_state() {
         game_.current_turn(),
         game_.status(),
         game_.last_move(),
+        has_undo_point(piece_side::Red),
+        has_undo_point(piece_side::Black),
         game_.board()
     });
+}
+
+bool network_game_session::has_undo_point(piece_side side) const {
+    return std::any_of(
+        move_history_.begin(),
+        move_history_.end(),
+        [side](const move_record& record) {
+            return record.mover == side;
+        }
+    );
+}
+
+bool network_game_session::apply_undo(piece_side side) {
+    const auto reverse_record = std::find_if(
+        move_history_.rbegin(),
+        move_history_.rend(),
+        [side](const move_record& record) {
+            return record.mover == side;
+        }
+    );
+    if (reverse_record == move_history_.rend()) return false;
+
+    const auto erase_from = std::prev(reverse_record.base());
+    const game_state restored = erase_from->before_move;
+    const std::uint32_t next_sequence = game_.sequence() + 1;
+    game_.apply_snapshot(
+        restored.board(),
+        restored.current_turn(),
+        restored.status(),
+        next_sequence,
+        std::nullopt
+    );
+    move_history_.erase(erase_from, move_history_.end());
+    return true;
+}
+
+void network_game_session::clear_undo_requests() {
+    undo_request_pending_ = false;
+    undo_request_incoming_ = false;
+}
+
+void network_game_session::clear_history() {
+    move_history_.clear();
+    red_can_undo_ = false;
+    black_can_undo_ = false;
 }
 
 void network_game_session::reject_client_move(std::string reason) {
@@ -430,4 +639,5 @@ void network_game_session::fail_session(
     status_text_ = std::move(reason);
     move_pending_ = false;
     restart_pending_ = false;
+    clear_undo_requests();
 }

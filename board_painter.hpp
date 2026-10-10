@@ -56,6 +56,8 @@ public:
 		const std::string& message
 	) const;
 	void draw_back_button() const;
+	void draw_undo_button(const char* text, bool enabled) const;
+	void draw_undo_request_window() const;
 private:
 	void draw_piece_at(const piece& value, float center_x, float center_y) const;
 	Font chinese_font{};

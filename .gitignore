@@ -18,3 +18,6 @@
 *.tlog
 *.lastbuildstate
 *.recipe
+
+# Local development plan
+PLAN.md
