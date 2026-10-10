@@ -176,4 +176,5 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 - [raylib](https://www.raylib.com/)：许可证见 `third_party/raylib/LICENSE`
 - [Noto CJK](https://github.com/notofonts/noto-cjk)：许可证见 `assets/fonts/LICENSE.txt`
 
-本仓库目前没有为项目自身代码提供单独的开源许可证。第三方组件仍分别遵循其原许可证。
+本项目代码采用 [MIT License](LICENSE) 开源。
+第三方组件分别遵循其原许可证。
